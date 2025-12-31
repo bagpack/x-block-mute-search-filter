@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>X Block & Mute Search Filter</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+      body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        background: #f6f6f6;
+        color: #1a1a1a;
+      }
+      .wrap {
+        min-width: 220px;
+        padding: 12px;
+      }
+      h1 {
+        margin: 0 0 10px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      button {
+        width: 100%;
+        padding: 8px 10px;
+        border: 0;
+        border-radius: 6px;
+        background: #1d9bf0;
+        color: #fff;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      button[disabled] {
+        opacity: 0.6;
+        cursor: default;
+      }
+      .status {
+        margin-top: 8px;
+        font-size: 12px;
+        color: #555;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>データ取得</h1>
+      <button id="importBtn" type="button">ミュート/ブロック一覧を取得</button>
+      <div id="status" class="status"></div>
+      <div id="importStatus" class="status"></div>
+      <div id="listCounts" class="status"></div>
+      <div id="hidden" class="status"></div>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>

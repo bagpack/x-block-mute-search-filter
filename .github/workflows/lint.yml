@@ -1,0 +1,99 @@
+name: Lint
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm install
+      - name: Run ESLint
+        id: eslint
+        run: |
+          set +e
+          npm run lint > eslint.txt 2>&1
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+          cat eslint.txt
+          exit 0
+      - name: Run Prettier
+        id: prettier
+        run: |
+          set +e
+          npm run format:check > prettier.txt 2>&1
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+          cat prettier.txt
+          exit 0
+      - name: Check package outdated
+        id: outdated
+        run: |
+          set +e
+          npm outdated --long > outdated.txt 2>&1
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+          cat outdated.txt
+          exit 0
+      - name: Prepare PR comment
+        id: comment
+        run: |
+          eslint_status="✅"
+          if [ "${{ steps.eslint.outputs.exit_code }}" != "0" ]; then eslint_status="❌"; fi
+          prettier_status="✅"
+          if [ "${{ steps.prettier.outputs.exit_code }}" != "0" ]; then prettier_status="❌"; fi
+          outdated_status="✅"
+          if [ "${{ steps.outdated.outputs.exit_code }}" != "0" ]; then outdated_status="⚠️"; fi
+          eslint_output=$(sed -n '1,200p' eslint.txt)
+          prettier_output=$(sed -n '1,200p' prettier.txt)
+          outdated_output=$(sed -n '1,200p' outdated.txt)
+          {
+            echo "## Lint results"
+            echo "- ESLint: ${eslint_status}"
+            echo "- Prettier: ${prettier_status}"
+            echo "- Outdated: ${outdated_status}"
+            echo ""
+            echo "<details>"
+            echo "<summary>ESLint output (first 200 lines)</summary>"
+            echo ""
+            echo "\`\`\`"
+            echo "${eslint_output}"
+            echo "\`\`\`"
+            echo "</details>"
+            echo ""
+            echo "<details>"
+            echo "<summary>Prettier output (first 200 lines)</summary>"
+            echo ""
+            echo "\`\`\`"
+            echo "${prettier_output}"
+            echo "\`\`\`"
+            echo "</details>"
+            echo ""
+            echo "<details>"
+            echo "<summary>npm outdated (first 200 lines)</summary>"
+            echo ""
+            echo "\`\`\`"
+            echo "${outdated_output}"
+            echo "\`\`\`"
+            echo "</details>"
+          } > comment.txt
+          {
+            echo "body<<EOF"
+            cat comment.txt
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+      - name: Comment on PR
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          message: ${{ steps.comment.outputs.body }}
+      - name: Fail if checks failed
+        if: steps.eslint.outputs.exit_code != '0' || steps.prettier.outputs.exit_code != '0'
+        run: exit 1

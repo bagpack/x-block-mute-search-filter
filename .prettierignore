@@ -1,0 +1,4 @@
+.agent/
+icons/
+node_modules/
+*.md
