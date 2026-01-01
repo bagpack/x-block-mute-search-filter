@@ -5,7 +5,6 @@ const STORAGE_KEYS = {
   lastError: "lastError",
 };
 
-const LIST_TTL_MS = 6 * 60 * 60 * 1000;
 const LOG_PREFIX = "[x-bmsf]";
 let hiddenHandleSet = new Set();
 let currentMuted = new Set();
@@ -47,10 +46,35 @@ function hideNode(node, handle) {
     return;
   }
   container.dataset.xBmsfHidden = "true";
+  if (handle) {
+    container.dataset.xBmsfHandle = handle;
+  }
   container.style.display = "none";
   if (handle && !hiddenHandleSet.has(handle)) {
     hiddenHandleSet.add(handle);
     notifyHiddenCount();
+  }
+}
+
+function showNode(node) {
+  const container = node.closest('[data-testid="cellInnerDiv"]') || node;
+  if (container.dataset.xBmsfHidden !== "true") {
+    return;
+  }
+  container.dataset.xBmsfHidden = "false";
+  container.style.display = "";
+}
+
+function restoreVisible(root, mutedSet, blockedSet) {
+  const hidden = root.querySelectorAll('[data-x-bmsf-hidden="true"]');
+  for (const node of hidden) {
+    const handle = node.dataset.xBmsfHandle;
+    if (!handle) {
+      continue;
+    }
+    if (!mutedSet.has(handle) && !blockedSet.has(handle)) {
+      showNode(node);
+    }
   }
 }
 
@@ -123,19 +147,9 @@ function notifyHiddenCount() {
     .catch(() => {});
 }
 
-async function maybeRefreshLists(updatedAt) {
-  if (!updatedAt || Date.now() - updatedAt > LIST_TTL_MS) {
-    try {
-      await chrome.runtime.sendMessage({ type: "refreshLists" });
-    } catch (error) {
-      console.warn("Failed to refresh lists", error);
-    }
-  }
-}
-
 async function startFiltering() {
   const { updatedAt } = await loadLists();
-  await maybeRefreshLists(updatedAt);
+  void updatedAt;
 
   scanAndFilter(document, currentMuted, currentBlocked);
 
@@ -162,6 +176,7 @@ async function startFiltering() {
       currentBlocked = new Set((changes[STORAGE_KEYS.blocked]?.newValue || []).map(normalizeHandle));
       hiddenHandleSet = new Set();
       scanAndFilter(document, currentMuted, currentBlocked);
+      restoreVisible(document, currentMuted, currentBlocked);
       notifyHiddenCount();
     }
   });

@@ -107,6 +107,42 @@ function normalizeHandle(handle) {
   return handle.toLowerCase().replace(/^@/, "");
 }
 
+async function updateHandleList(listType, action, handle) {
+  const storageKey = listType === "muted" ? STORAGE_KEYS.muted : listType === "blocked" ? STORAGE_KEYS.blocked : null;
+  if (!storageKey) {
+    return false;
+  }
+
+  if (typeof handle !== "string" || handle.length === 0) {
+    return false;
+  }
+
+  const normalized = normalizeHandle(handle);
+  const stored = await chrome.storage.local.get([storageKey]);
+  const existing = Array.isArray(stored[storageKey]) ? stored[storageKey] : [];
+  const nextSet = new Set(existing.map(normalizeHandle));
+
+  if (action === "add") {
+    if (nextSet.has(normalized)) {
+      return false;
+    }
+    nextSet.add(normalized);
+  } else if (action === "remove") {
+    if (!nextSet.has(normalized)) {
+      return false;
+    }
+    nextSet.delete(normalized);
+  } else {
+    return false;
+  }
+
+  await chrome.storage.local.set({
+    [storageKey]: Array.from(nextSet),
+    [STORAGE_KEYS.updatedAt]: Date.now(),
+  });
+  return true;
+}
+
 function extractScreenNames(json) {
   const screenNames = new Set();
   let nextCursor = null;
@@ -427,7 +463,7 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 chrome.runtime.onStartup.addListener(() => {
-  loadQueryConfig().then(refreshLists);
+  loadQueryConfig();
 });
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -456,6 +492,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
   if (message?.type === "openImportTabs") {
     openImportTabs().then(() => sendResponse({ ok: true }));
+    return true;
+  }
+  if (message?.type === "updateListFromAction") {
+    updateHandleList(message.list, message.action, message.handle).then((updated) =>
+      sendResponse({ ok: true, updated })
+    );
     return true;
   }
   return false;

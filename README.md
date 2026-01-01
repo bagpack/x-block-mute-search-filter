@@ -7,6 +7,7 @@ Japanese README: [README.ja.md](README.ja.md)
 ## Features
 - Hides posts from blocked and muted accounts on X search pages.
 - Imports your muted/blocked lists from X using your logged-in session.
+- Updates lists immediately after mute/block actions on X.
 - Shows list counts and hidden account counts in the extension popup.
 
 ## Requirements
@@ -24,7 +25,8 @@ Japanese README: [README.ja.md](README.ja.md)
 4. The popup shows "Import complete" when finished.
 
 ## Refresh after adding a block/mute
-X does not push updates to the extension. After you block or mute accounts:
+Mute/block changes are reflected automatically when you perform them on X.
+If the list looks out of sync:
 1. Click the extension icon.
 2. Click "Fetch muted/blocked lists".
 3. Wait for the "Import complete" message in the popup.
