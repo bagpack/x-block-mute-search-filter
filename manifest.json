@@ -6,7 +6,7 @@
   "permissions": ["storage", "cookies", "webRequest"],
   "host_permissions": ["https://x.com/*"],
   "action": {
-    "default_title": "ミュート/ブロック一覧を取得",
+    "default_title": "X Block & Mute Search Filter",
     "default_popup": "popup.html"
   },
   "background": {
