@@ -80,7 +80,12 @@ let refreshInFlight = false;
 let refreshTimer = null;
 let notifyOnNextRefresh = false;
 let importTabIds = [];
-const AUTH_REQUIRED_MESSAGE = "Xにログインしてください。ログイン後に再取得します。";
+
+function t(key, substitutions) {
+  return chrome.i18n.getMessage(key, substitutions) || "";
+}
+
+const AUTH_REQUIRED_MESSAGE = t("background_auth_required");
 const REFRESH_REASON = Object.freeze({
   authBearer: "auth_bearer",
   ct0Changed: "ct0_changed",
@@ -409,15 +414,15 @@ async function refreshLists() {
       [STORAGE_KEYS.updatedAt]: Date.now(),
       [STORAGE_KEYS.lastError]:
         mutedResult.reason === "missing_query" && blockedResult.reason === "missing_query"
-          ? "ミュート/ブロック一覧に移動してAPI情報を取得してください。"
+          ? t("background_missing_both")
           : mutedResult.reason === "missing_query"
-            ? "ミュート一覧に移動してAPI情報を取得してください。"
+            ? t("background_missing_muted")
             : blockedResult.reason === "missing_query"
-              ? "ブロック一覧に移動してAPI情報を取得してください。"
+              ? t("background_missing_blocked")
               : mutedResult.reason === "auth_required" || blockedResult.reason === "auth_required"
-                ? "認証情報が不足しているため、一時停止しています。取得後に再開します。"
+                ? t("background_auth_insufficient")
                 : mutedResult.reason === "cooldown" || blockedResult.reason === "cooldown"
-                  ? "API制限のため、一時停止しています。しばらく待ってから再開します。"
+                  ? t("background_rate_limited")
                   : null,
     };
 
@@ -668,7 +673,7 @@ function shouldMarkImportComplete(mutedResult, blockedResult, updatePayload) {
 function buildImportStatus(mutedCount, blockedCount) {
   const now = new Date();
   const time = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-  return `取得完了: ミュート${mutedCount}件、ブロック${blockedCount}件 (${time})`;
+  return t("background_import_complete", [String(mutedCount), String(blockedCount), time]);
 }
 
 chrome.webRequest.onBeforeRequest.addListener(

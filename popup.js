@@ -8,13 +8,32 @@ const MUTED_KEY = "mutedHandles";
 const BLOCKED_KEY = "blockedHandles";
 const POPUP_OPEN_KEY = "popupOpen";
 
+function t(key, substitutions) {
+  return chrome.i18n.getMessage(key, substitutions) || "";
+}
+
+function applyI18n() {
+  const lang = chrome.i18n.getUILanguage();
+  if (lang) {
+    document.documentElement.lang = lang;
+  }
+  document.title = t("extension_name");
+  const nodes = document.querySelectorAll("[data-i18n]");
+  for (const node of nodes) {
+    const key = node.getAttribute("data-i18n");
+    if (key) {
+      node.textContent = t(key);
+    }
+  }
+}
+
 function setStatus(message) {
   statusEl.textContent = message || "";
 }
 
 function setHiddenCount(count) {
   const value = Number.isFinite(count) ? count : 0;
-  hiddenEl.textContent = `非表示アカウント数(このタブ): ${value}`;
+  hiddenEl.textContent = t("popup_hidden_count", String(value));
 }
 
 function setImportStatus(message) {
@@ -24,7 +43,7 @@ function setImportStatus(message) {
 function setListCounts(mutedCount, blockedCount) {
   const mutedValue = Number.isFinite(mutedCount) ? mutedCount : 0;
   const blockedValue = Number.isFinite(blockedCount) ? blockedCount : 0;
-  listCountsEl.textContent = `ミュート件数: ${mutedValue} / ブロック件数: ${blockedValue}`;
+  listCountsEl.textContent = t("popup_list_counts", [String(mutedValue), String(blockedValue)]);
 }
 
 async function loadHiddenCount() {
@@ -62,12 +81,12 @@ async function loadListCounts() {
 
 async function requestImport() {
   importBtn.disabled = true;
-  setStatus("一覧ページを開いて取得します...");
+  setStatus(t("popup_status_open_list"));
   try {
     await chrome.runtime.sendMessage({ type: "startImport" });
-    setStatus("取得を開始しました。");
+    setStatus(t("popup_status_started"));
   } catch (error) {
-    setStatus("取得に失敗しました。");
+    setStatus(t("popup_status_failed"));
   } finally {
     importBtn.disabled = false;
   }
@@ -81,6 +100,7 @@ importBtn.addEventListener("click", () => {
   requestImport();
 });
 
+applyI18n();
 setPopupOpen(true);
 window.addEventListener("unload", () => {
   setPopupOpen(false);

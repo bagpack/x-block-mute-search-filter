@@ -18,14 +18,21 @@ function handleActionMessage(payload) {
   if (!list || !action || !screenName) {
     return;
   }
-  chrome.runtime
-    .sendMessage({
-      type: "updateListFromAction",
-      list,
-      action,
-      handle: screenName,
-    })
-    .catch(() => {});
+  try {
+    chrome.runtime.sendMessage(
+      {
+        type: "updateListFromAction",
+        list,
+        action,
+        handle: screenName,
+      },
+      () => {
+        void chrome.runtime.lastError;
+      }
+    );
+  } catch (error) {
+    // Extension context can be invalidated after reload; ignore.
+  }
 }
 
 injectNetworkHook();

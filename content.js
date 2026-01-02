@@ -139,12 +139,19 @@ async function loadLists() {
 }
 
 function notifyHiddenCount() {
-  chrome.runtime
-    .sendMessage({
-      type: "hiddenUpdate",
-      count: hiddenHandleSet.size,
-    })
-    .catch(() => {});
+  try {
+    chrome.runtime.sendMessage(
+      {
+        type: "hiddenUpdate",
+        count: hiddenHandleSet.size,
+      },
+      () => {
+        void chrome.runtime.lastError;
+      }
+    );
+  } catch (error) {
+    // Extension context can be invalidated after reload; ignore.
+  }
 }
 
 async function startFiltering() {

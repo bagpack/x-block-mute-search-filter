@@ -1,0 +1,74 @@
+{
+  "extension_name": {
+    "message": "X Block & Mute Search Filter"
+  },
+  "extension_description": {
+    "message": "Hide blocked and muted accounts from X search results."
+  },
+  "popup_title_data_fetch": {
+    "message": "Fetch Data"
+  },
+  "popup_button_import": {
+    "message": "Fetch muted/blocked lists"
+  },
+  "popup_status_open_list": {
+    "message": "Opening list pages to fetch..."
+  },
+  "popup_status_started": {
+    "message": "Fetch started."
+  },
+  "popup_status_failed": {
+    "message": "Failed to fetch."
+  },
+  "popup_hidden_count": {
+    "message": "Hidden accounts (this tab): $1",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_list_counts": {
+    "message": "Muted: $1 / Blocked: $2",
+    "placeholders": {
+      "muted": {
+        "content": "$1"
+      },
+      "blocked": {
+        "content": "$2"
+      }
+    }
+  },
+  "background_auth_required": {
+    "message": "Please log in to X. Fetch will resume after login."
+  },
+  "background_missing_both": {
+    "message": "Open the muted/blocked list pages so API info can be captured."
+  },
+  "background_missing_muted": {
+    "message": "Open the muted list page so API info can be captured."
+  },
+  "background_missing_blocked": {
+    "message": "Open the blocked list page so API info can be captured."
+  },
+  "background_auth_insufficient": {
+    "message": "Missing authentication data. Pausing and will resume after capture."
+  },
+  "background_rate_limited": {
+    "message": "Rate limited. Pausing and will resume after some time."
+  },
+  "background_import_complete": {
+    "message": "Import complete: muted $1, blocked $2 ($3)",
+    "placeholders": {
+      "muted": {
+        "content": "$1"
+      },
+      "blocked": {
+        "content": "$2"
+      },
+      "time": {
+        "content": "$3"
+      }
+    }
+  }
+}

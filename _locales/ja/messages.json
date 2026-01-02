@@ -1,0 +1,74 @@
+{
+  "extension_name": {
+    "message": "X Block & Mute Search Filter"
+  },
+  "extension_description": {
+    "message": "Xの検索結果からブロック/ミュートしたアカウントを非表示にします。"
+  },
+  "popup_title_data_fetch": {
+    "message": "データ取得"
+  },
+  "popup_button_import": {
+    "message": "ミュート/ブロック一覧を取得"
+  },
+  "popup_status_open_list": {
+    "message": "一覧ページを開いて取得します..."
+  },
+  "popup_status_started": {
+    "message": "取得を開始しました。"
+  },
+  "popup_status_failed": {
+    "message": "取得に失敗しました。"
+  },
+  "popup_hidden_count": {
+    "message": "非表示アカウント数(このタブ): $1",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "popup_list_counts": {
+    "message": "ミュート件数: $1 / ブロック件数: $2",
+    "placeholders": {
+      "muted": {
+        "content": "$1"
+      },
+      "blocked": {
+        "content": "$2"
+      }
+    }
+  },
+  "background_auth_required": {
+    "message": "Xにログインしてください。ログイン後に再取得します。"
+  },
+  "background_missing_both": {
+    "message": "ミュート/ブロック一覧に移動してAPI情報を取得してください。"
+  },
+  "background_missing_muted": {
+    "message": "ミュート一覧に移動してAPI情報を取得してください。"
+  },
+  "background_missing_blocked": {
+    "message": "ブロック一覧に移動してAPI情報を取得してください。"
+  },
+  "background_auth_insufficient": {
+    "message": "認証情報が不足しているため、一時停止しています。取得後に再開します。"
+  },
+  "background_rate_limited": {
+    "message": "API制限のため、一時停止しています。しばらく待ってから再開します。"
+  },
+  "background_import_complete": {
+    "message": "取得完了: ミュート$1件、ブロック$2件 ($3)",
+    "placeholders": {
+      "muted": {
+        "content": "$1"
+      },
+      "blocked": {
+        "content": "$2"
+      },
+      "time": {
+        "content": "$3"
+      }
+    }
+  }
+}
