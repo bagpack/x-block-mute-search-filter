@@ -9,9 +9,61 @@ const LOG_PREFIX = "[x-bmsf]";
 let hiddenHandleSet = new Set();
 let currentMuted = new Set();
 let currentBlocked = new Set();
+let scanScheduled = false;
+const pendingScanRoots = new Set();
+const pendingRetryCounts = new WeakMap();
+const MAX_PENDING_RETRIES = 5;
+const PENDING_RETRY_MS = 500;
 
 function normalizeHandle(handle) {
   return handle.toLowerCase().replace(/^@/, "");
+}
+
+function schedulePendingRetry(node) {
+  if (!node || node.nodeType !== Node.ELEMENT_NODE) {
+    return;
+  }
+  const currentCount = pendingRetryCounts.get(node) || 0;
+  if (currentCount >= MAX_PENDING_RETRIES) {
+    return;
+  }
+  pendingRetryCounts.set(node, currentCount + 1);
+  setTimeout(() => {
+    scheduleScan(node);
+  }, PENDING_RETRY_MS);
+}
+
+function normalizeScanRoot(node) {
+  if (!node) {
+    return null;
+  }
+  if (node.nodeType === Node.DOCUMENT_NODE) {
+    return node;
+  }
+  if (node.nodeType === Node.ELEMENT_NODE) {
+    return node;
+  }
+  return node.parentElement || null;
+}
+
+function scheduleScan(node) {
+  const root = normalizeScanRoot(node);
+  if (!root) {
+    return;
+  }
+  pendingScanRoots.add(root);
+  if (scanScheduled) {
+    return;
+  }
+  scanScheduled = true;
+  requestAnimationFrame(() => {
+    scanScheduled = false;
+    const roots = Array.from(pendingScanRoots);
+    pendingScanRoots.clear();
+    for (const scanRoot of roots) {
+      scanAndFilter(scanRoot, currentMuted, currentBlocked);
+    }
+  });
 }
 
 function extractHandleFromHref(href) {
@@ -81,6 +133,7 @@ function restoreVisible(root, mutedSet, blockedSet) {
 function applyFilterToArticle(article, mutedSet, blockedSet) {
   const handle = getHandleFromArticle(article);
   if (!handle) {
+    schedulePendingRetry(article);
     return;
   }
   if (mutedSet.has(handle) || blockedSet.has(handle)) {
@@ -91,6 +144,7 @@ function applyFilterToArticle(article, mutedSet, blockedSet) {
 function applyFilterToUserCell(cell, mutedSet, blockedSet) {
   const handle = getHandleFromUserCell(cell);
   if (!handle) {
+    schedulePendingRetry(cell);
     return;
   }
   if (mutedSet.has(handle) || blockedSet.has(handle)) {
@@ -162,16 +216,30 @@ async function startFiltering() {
 
   const observer = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
-      for (const node of mutation.addedNodes) {
-        if (node.nodeType !== Node.ELEMENT_NODE) {
-          continue;
+      if (mutation.type === "childList") {
+        scheduleScan(mutation.target);
+        for (const node of mutation.addedNodes) {
+          scheduleScan(node);
         }
-        scanAndFilter(node, currentMuted, currentBlocked);
+        continue;
+      }
+      if (mutation.type === "attributes") {
+        scheduleScan(mutation.target);
+        continue;
+      }
+      if (mutation.type === "characterData") {
+        scheduleScan(mutation.target?.parentElement);
       }
     }
   });
 
-  observer.observe(document.body, { childList: true, subtree: true });
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["href"],
+    characterData: true,
+  });
 
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName !== "local") {
