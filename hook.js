@@ -5,20 +5,22 @@
   window.__xBmsfHooked = true;
 
   const SOURCE = "x-bmsf";
-  const TYPE = "action";
-  const targets = [
+  const ACTION_TYPE = "action";
+  const TIMELINE_TYPE = "timeline";
+  const actionTargets = [
     { path: "/i/api/1.1/mutes/users/create.json", list: "muted", action: "add" },
     { path: "/i/api/1.1/mutes/users/destroy.json", list: "muted", action: "remove" },
     { path: "/i/api/1.1/blocks/create.json", list: "blocked", action: "add" },
     { path: "/i/api/1.1/blocks/destroy.json", list: "blocked", action: "remove" },
   ];
+  const timelineTargets = [{ path: "/SearchTimeline", name: "SearchTimeline" }];
 
-  function matchTarget(url) {
+  function matchActionTarget(url) {
     if (!url) {
       return null;
     }
     const urlText = String(url);
-    for (const target of targets) {
+    for (const target of actionTargets) {
       if (urlText.includes(target.path)) {
         return target;
       }
@@ -26,7 +28,20 @@
     return null;
   }
 
-  function emit(target, json) {
+  function matchTimelineTarget(url) {
+    if (!url) {
+      return null;
+    }
+    const urlText = String(url);
+    for (const target of timelineTargets) {
+      if (urlText.includes(target.path)) {
+        return target;
+      }
+    }
+    return null;
+  }
+
+  function emitAction(target, json) {
     if (!target || !json) {
       return;
     }
@@ -37,10 +52,24 @@
     window.postMessage(
       {
         source: SOURCE,
-        type: TYPE,
+        type: ACTION_TYPE,
         list: target.list,
         action: target.action,
         screenName,
+      },
+      "*"
+    );
+  }
+
+  function emitTimeline(target) {
+    if (!target) {
+      return;
+    }
+    window.postMessage(
+      {
+        source: SOURCE,
+        type: TIMELINE_TYPE,
+        name: target.name,
       },
       "*"
     );
@@ -53,12 +82,16 @@
       try {
         const input = args[0];
         const url = typeof input === "string" ? input : input && input.url;
-        const target = matchTarget(url);
-        if (target) {
+        const actionTarget = matchActionTarget(url);
+        const timelineTarget = matchTimelineTarget(url);
+        if (timelineTarget) {
+          emitTimeline(timelineTarget);
+        }
+        if (actionTarget) {
           const cloned = response.clone();
           const text = await cloned.text();
           if (text) {
-            emit(target, JSON.parse(text));
+            emitAction(actionTarget, JSON.parse(text));
           }
         }
       } catch (error) {
@@ -78,14 +111,17 @@
   XMLHttpRequest.prototype.send = function (...args) {
     this.addEventListener("load", () => {
       try {
-        const target = matchTarget(this.__xBmsfUrl);
-        if (!target) {
-          return;
+        const actionTarget = matchActionTarget(this.__xBmsfUrl);
+        const timelineTarget = matchTimelineTarget(this.__xBmsfUrl);
+        if (timelineTarget) {
+          emitTimeline(timelineTarget);
         }
-        if (!this.responseText) {
-          return;
+        if (actionTarget) {
+          if (!this.responseText) {
+            return;
+          }
+          emitAction(actionTarget, JSON.parse(this.responseText));
         }
-        emit(target, JSON.parse(this.responseText));
       } catch (error) {
         // ignore hook errors
       }

@@ -6,6 +6,10 @@ const STORAGE_KEYS = {
 };
 
 const LOG_PREFIX = "[x-bmsf]";
+const NETWORK_MESSAGE_SOURCE = "x-bmsf";
+const TIMELINE_MESSAGE_TYPE = "timeline";
+const TIMELINE_NAME_SEARCH = "SearchTimeline";
+const TIMELINE_RESCAN_DELAY_MS = 250;
 let hiddenHandleSet = new Set();
 let currentMuted = new Set();
 let currentBlocked = new Set();
@@ -40,10 +44,12 @@ function normalizeScanRoot(node) {
   if (node.nodeType === Node.DOCUMENT_NODE) {
     return node;
   }
-  if (node.nodeType === Node.ELEMENT_NODE) {
-    return node;
+  const element = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+  if (!element) {
+    return null;
   }
-  return node.parentElement || null;
+  const scopedRoot = element.closest('article[data-testid="tweet"], [data-testid="UserCell"]');
+  return scopedRoot || element;
 }
 
 function scheduleScan(node) {
@@ -153,6 +159,12 @@ function applyFilterToUserCell(cell, mutedSet, blockedSet) {
 }
 
 function scanAndFilter(root, mutedSet, blockedSet) {
+  if (root?.matches?.('article[data-testid="tweet"]')) {
+    applyFilterToArticle(root, mutedSet, blockedSet);
+  }
+  if (root?.matches?.('[data-testid="UserCell"]')) {
+    applyFilterToUserCell(root, mutedSet, blockedSet);
+  }
   const articles = root.querySelectorAll('article[data-testid="tweet"]');
   for (const article of articles) {
     applyFilterToArticle(article, mutedSet, blockedSet);
@@ -258,6 +270,22 @@ async function startFiltering() {
 }
 
 startFiltering();
+
+window.addEventListener("message", (event) => {
+  if (event.source !== window) {
+    return;
+  }
+  const data = event.data;
+  if (data?.source !== NETWORK_MESSAGE_SOURCE || data?.type !== TIMELINE_MESSAGE_TYPE) {
+    return;
+  }
+  if (data?.name === TIMELINE_NAME_SEARCH) {
+    scheduleScan(document);
+    setTimeout(() => {
+      scheduleScan(document);
+    }, TIMELINE_RESCAN_DELAY_MS);
+  }
+});
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.type === "getHiddenCount") {
